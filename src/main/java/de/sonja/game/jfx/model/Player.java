@@ -55,4 +55,17 @@ public class Player extends Rectangle {
             onGround = false;
         }
     }
+
+    public double getVelocityY() {
+        return velocityY;
+    }
+
+    public void setVelocityY(double v) {
+        this.velocityY = v;
+    }
+
+    public void setOnGround(boolean value) {
+        this.onGround = value;
+    }
+
 }
