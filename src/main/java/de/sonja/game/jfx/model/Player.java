@@ -3,6 +3,7 @@ package de.sonja.game.jfx.model;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.paint.Color;
 
+
 public class Player extends Rectangle {
 
     // Position wird von Rectangle geerbt
@@ -21,7 +22,7 @@ public class Player extends Rectangle {
         setTranslateY(y);
     }
 
-    public void update() {
+    public void update(double sceneHeight) {
         // Schwerkraft anwenden
         velocityY += gravity;
 
@@ -29,9 +30,12 @@ public class Player extends Rectangle {
         setTranslateX(getTranslateX() + velocityX);
         setTranslateY(getTranslateY() + velocityY);
 
-        // Boden-Kollision (temporär)
-        if (getTranslateY() >= 500) { // Boden bei y=500
-            setTranslateY(500);
+        // Dynamische Boden-Kollision
+        double groundY = sceneHeight - 50; // Bodenhöhe = Fensterhöhe - 50px
+        double playerBottom = getTranslateY() + getHeight();
+
+        if (playerBottom >= groundY) {
+            setTranslateY(groundY - getHeight());
             velocityY = 0;
             onGround = true;
         }

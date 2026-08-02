@@ -1,9 +1,10 @@
 package de.sonja.game.jfx;
 
+import de.sonja.game.jfx.controller.InputController;
+import de.sonja.game.jfx.level.LevelManager;
 import de.sonja.game.jfx.model.Platform;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -12,73 +13,59 @@ import de.sonja.game.jfx.model.Player;
 import java.util.ArrayList;
 import java.util.List;
 
+
+
 public class Main extends Application {
 
     private Player player;
-    List<Platform> platforms = new ArrayList<>();
+    private List<Platform> platforms = new ArrayList<>();
+    public LevelManager levelManager;
+    private double levelWidth;
     private double cameraX = 0;
+    private AnimationTimer gameLoop;
+    private int currentLevelNumber = 1;
+
 
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(Stage stage) {
         Pane root = new Pane();
+        root.setStyle("-fx-background-color: white;");
         Scene scene = new Scene(root, 800, 600);
 
-        scene.setOnKeyPressed(event -> {
-            switch (event.getCode()) {
-                case A:
-                case LEFT:
-                    player.moveLeft();
-                    break;
-
-                case D:
-                case RIGHT:
-                    player.moveRight();
-                    break;
-
-                case SPACE:
-                case W:
-                case UP:
-                    player.jump();
-                    break;
-            }
-        });
-
-        scene.setOnKeyReleased(event -> {
-            switch (event.getCode()) {
-                case A:
-                case LEFT:
-                case D:
-                case RIGHT:
-                    player.stopMoving();
-                    break;
-            }
-        });
-
-        // Player erstellen
+//        // --- Player erstellen ---
         player = new Player(10, 100);
         root.getChildren().add(player);
 
-        Platform ground = new Platform(0, 550, 5000, 50);
-        Platform p1 = new Platform(100, 450, 120, 20);
-        Platform p2 = new Platform(280, 350, 300, 200);
+        new InputController(scene, player);
 
-        platforms.add(ground);
-        platforms.add(p1);
-        platforms.add(p2);
+        stage.setScene(scene);
+        stage.setTitle("Anime Jump and Run");
+        stage.show();
 
-        root.getChildren().addAll(ground, p1, p2);
+        // --- LevelManager erstellen und Level 1 laden ---
+        levelManager = new LevelManager(this);
+        levelManager.loadLevel(root, player, 1);
 
-        // Game Loop
-        AnimationTimer gameLoop = new AnimationTimer() {
+        platforms = levelManager.getPlatforms();
+        levelWidth = levelManager.getLevelWidth();
+
+
+        // --- Game Loop ---
+        gameLoop = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                double levelWidth = 5000;
-                double centerX = scene.getWidth() / 2;
 
 
-                player.update();
+                if (levelManager.isGameWon(currentLevelNumber)) {
+                    gameLoop.stop();
+                    return;
+                }
+
+                player.update(scene.getHeight());
                 checkCollisions();
+
+                double centerX = scene.getWidth() / 2;
 
                 // --- Spieler begrenzen ---
                 if (player.getTranslateX() < 0) {
@@ -96,24 +83,28 @@ public class Main extends Application {
                     offsetX = player.getTranslateX() - centerX;
                 }
 
-                // Kamera darf nicht über Level-Ende hinaus
                 double maxCameraOffset = levelWidth - scene.getWidth();
                 if (offsetX > maxCameraOffset) {
                     offsetX = maxCameraOffset;
                 }
 
-                // Kamera anwenden// Kamera anwenden
                 cameraX += (offsetX - cameraX) * 0.1;
                 root.setTranslateX(-cameraX);
 
+                if (player.getTranslateX() + player.getWidth() >= levelWidth) {
 
+                    currentLevelNumber++;
+                    if (levelManager.isGameWon(currentLevelNumber)) {
+                        gameLoop.stop();
+                    }
+                    levelManager.loadLevel(root, player, currentLevelNumber);
+
+                    platforms = levelManager.getPlatforms();
+                    levelWidth = levelManager.getLevelWidth();
+                }
             }
         };
         gameLoop.start();
-
-        stage.setTitle("Anime Jump and Run");
-        stage.setScene(scene);
-        stage.show();
     }
 
     private void checkCollisions() {
@@ -143,14 +134,12 @@ public class Main extends Application {
 
                 // Seitliche Kollision
                 else {
-                    // Player kommt von links
                     if (playerBounds.getMaxX() > platformBounds.getMinX() &&
                             playerBounds.getMinX() < platformBounds.getMinX()) {
 
                         player.setTranslateX(platformBounds.getMinX() - player.getWidth());
                     }
 
-                    // Player kommt von rechts
                     else if (playerBounds.getMinX() < platformBounds.getMaxX() &&
                             playerBounds.getMaxX() > platformBounds.getMaxX()) {
 
@@ -161,7 +150,41 @@ public class Main extends Application {
         }
     }
 
+
+    public AnimationTimer getGameLoop() {
+        return gameLoop;
+    }
+
     public static void main(String[] args) {
         launch();
+    }
+
+    public void resetCamera() {
+        cameraX = 0;
+    }
+
+    private void pauseGame() {
+        gameLoop.stop();
+    }
+
+    private void resumeGame() {
+        gameLoop.start();
+    }
+
+    // In Main.java
+    public void setPlatforms(List<Platform> platforms) {
+        this.platforms = platforms;
+    }
+
+    public void setLevelWidth(double levelWidth) {
+        this.levelWidth = levelWidth;
+    }
+
+    public int getCurrentLevelNumber() {
+        return currentLevelNumber;
+    }
+
+    public void setCurrentLevelNumber(int currentLevelNumber) {
+        this.currentLevelNumber = currentLevelNumber;
     }
 }
