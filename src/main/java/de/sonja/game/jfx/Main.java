@@ -1,5 +1,6 @@
 package de.sonja.game.jfx;
 
+import de.sonja.game.jfx.controller.CameraController;
 import de.sonja.game.jfx.controller.InputController;
 import de.sonja.game.jfx.level.LevelManager;
 import de.sonja.game.jfx.model.Platform;
@@ -21,9 +22,9 @@ public class Main extends Application {
     private List<Platform> platforms = new ArrayList<>();
     public LevelManager levelManager;
     private double levelWidth;
-    private double cameraX = 0;
     private AnimationTimer gameLoop;
     private int currentLevelNumber = 1;
+    private CameraController cameraController;
 
 
 
@@ -38,6 +39,7 @@ public class Main extends Application {
         root.getChildren().add(player);
 
         new InputController(scene, player);
+        cameraController = new CameraController();
 
         stage.setScene(scene);
         stage.setTitle("Anime Jump and Run");
@@ -65,8 +67,6 @@ public class Main extends Application {
                 player.update(scene.getHeight());
                 checkCollisions();
 
-                double centerX = scene.getWidth() / 2;
-
                 // --- Spieler begrenzen ---
                 if (player.getTranslateX() < 0) {
                     player.setTranslateX(0);
@@ -76,20 +76,7 @@ public class Main extends Application {
                     player.setTranslateX(levelWidth - player.getWidth());
                 }
 
-                // --- Kamera ---
-                double offsetX = 0;
-
-                if (player.getTranslateX() > centerX) {
-                    offsetX = player.getTranslateX() - centerX;
-                }
-
-                double maxCameraOffset = levelWidth - scene.getWidth();
-                if (offsetX > maxCameraOffset) {
-                    offsetX = maxCameraOffset;
-                }
-
-                cameraX += (offsetX - cameraX) * 0.1;
-                root.setTranslateX(-cameraX);
+                cameraController.update(player, root, levelWidth);
 
                 if (player.getTranslateX() + player.getWidth() >= levelWidth) {
 
@@ -159,10 +146,6 @@ public class Main extends Application {
         launch();
     }
 
-    public void resetCamera() {
-        cameraX = 0;
-    }
-
     private void pauseGame() {
         gameLoop.stop();
     }
@@ -186,5 +169,9 @@ public class Main extends Application {
 
     public void setCurrentLevelNumber(int currentLevelNumber) {
         this.currentLevelNumber = currentLevelNumber;
+    }
+
+    public CameraController getCameraController() {
+        return cameraController;
     }
 }

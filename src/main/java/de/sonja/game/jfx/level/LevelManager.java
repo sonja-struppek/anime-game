@@ -53,7 +53,7 @@ public class LevelManager {
     public void showGameWonScreen(Pane root) {
         root.getChildren().clear();
         root.setTranslateX(0);
-        mainRef.resetCamera();
+        mainRef.getCameraController().resetCamera();
 
         VBox box = new VBox(20);
         box.setAlignment(Pos.CENTER);
@@ -71,7 +71,7 @@ public class LevelManager {
 
             root.getChildren().clear();
             root.setTranslateX(0);
-            mainRef.resetCamera();
+            mainRef.getCameraController().resetCamera();
             root.setStyle("-fx-background-color: white;");
 
             mainRef.levelManager.loadLevel(root, playerRef, 1);
